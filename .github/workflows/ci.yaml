@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "docker-compose.yaml"
+      - "docker-compose.local.yaml"
       - "Dockerfile.*"
       - "run.sh"
       - "push-1panel.sh"
@@ -15,6 +16,7 @@ on:
       - main
     paths:
       - "docker-compose.yaml"
+      - "docker-compose.local.yaml"
       - "Dockerfile.*"
       - "run.sh"
       - "push-1panel.sh"
@@ -28,5 +30,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build images
-        run: docker compose build
+      - name: Build images (local overlay)
+        run: docker compose -f docker-compose.yaml -f docker-compose.local.yaml build

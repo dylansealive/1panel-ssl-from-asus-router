@@ -1,0 +1,20 @@
+# Overlay for local builds. Tags *-local avoid overwriting Hub-pulled *-latest images.
+# Usage: docker compose -f docker-compose.yaml -f docker-compose.local.yaml build
+#        docker compose -f docker-compose.yaml -f docker-compose.local.yaml run --rm ssl-from-router
+
+services:
+  ssl-from-router:
+    image: dylansea/1panel-ssl-from-asus-router:router-local
+    build:
+      context: .
+      dockerfile: Dockerfile.router
+      args:
+        BUILD_FROM: alpine:3.20
+
+  ssl-push-1panel:
+    image: dylansea/1panel-ssl-from-asus-router:1panel-local
+    build:
+      context: .
+      dockerfile: Dockerfile.1panel
+      args:
+        BUILD_FROM: alpine:3.20

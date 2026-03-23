@@ -2,17 +2,24 @@
 
 Pull TLS key and certificate from an **Asus stock router** (SSH) and upload them to **1Panel** (website SSL API). Typical use: keep the router’s DDNS cert in sync with **Website → SSL**; files under **`./ssl`** can also be used by other apps (e.g. Home Assistant).
 
+**Docker Hub:** [dylansea/1panel-ssl-from-asus-router](https://hub.docker.com/r/dylansea/1panel-ssl-from-asus-router) — published images use tags **`router-latest`** / **`router-<version>`** and **`1panel-latest`** / **`1panel-<version>`** in that repository.
+
 ## About
 
 **1panel-ssl-from-asus-router** uses two small **Alpine** images: **`Dockerfile.router`** (`openssh-client`, `sshpass`, `run.sh`) and **`Dockerfile.1panel`** (`curl`, `jq`, `openssl`, `push-1panel.sh`). Configure with **`docker-compose.yaml`** and **`.env`**. The router step runs **`ssh-keyscan`**, then **`sshpass` + `ssh`** to `cat` the key and cert paths (no SCP on stock firmware).
 
-**Run:** `cp .env.example .env`, edit `.env`, then `docker compose build`.
+**Run (Docker Hub — default):** `cp .env.example .env`, edit `.env`, then `docker compose pull`, then `./sync.sh` or the `docker compose run` commands below. Base compose has **no `build:`**; images are **`dylansea/1panel-ssl-from-asus-router:router-latest`** and **`:1panel-latest`** ([Docker Hub](https://hub.docker.com/r/dylansea/1panel-ssl-from-asus-router)).
 
-- **Both steps in order** (two containers, two images): `./sync.sh`, or manually: `docker compose run --rm ssl-from-router && docker compose run --rm ssl-push-1panel`
-- **Debug one side only:**  
-`docker compose run --rm ssl-from-router` **or** `docker compose run --rm ssl-push-1panel`
+**Run (local build — develop / debug Dockerfile or scripts):** use the overlay so local tags **`*-local`** never overwrite pulled **`*-latest`**:
 
-Docker image tags: **`ssl-from-asus-router:latest`**, **`ssl-push-1panel:latest`**.
+```bash
+docker compose -f docker-compose.yaml -f docker-compose.local.yaml build
+docker compose -f docker-compose.yaml -f docker-compose.local.yaml run --rm ssl-from-router
+docker compose -f docker-compose.yaml -f docker-compose.local.yaml run --rm ssl-push-1panel
+```
+
+- **Both steps in order** (Hub): `./sync.sh`, or: `docker compose run --rm ssl-from-router && docker compose run --rm ssl-push-1panel`
+- **Debug one side only (Hub):** `docker compose run --rm ssl-from-router` **or** `docker compose run --rm ssl-push-1panel`
 
 **Security note:** Do not commit `.env` with real passwords. `sshpass` supplies the password non-interactively; on some systems it can be visible in process listings while the command runs. Prefer a strong password and keep SSH on a trusted LAN.
 

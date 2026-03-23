@@ -1,23 +1,18 @@
 # 1panel-ssl-from-asus-router — two images: router pull (SSH) vs 1Panel upload (HTTPS API).
 #
-# Together (host script chains two containers):
+# Default: Docker Hub images only (no build). Use docker compose pull before run.
+#
+# Local development (build from this repo, tags *-local — does not overwrite *-latest):
+#   docker compose -f docker-compose.yaml -f docker-compose.local.yaml build
+#   docker compose -f docker-compose.yaml -f docker-compose.local.yaml run --rm ssl-from-router
+#
+# Together:
 #   ./sync.sh
-#   # or: docker compose run --rm ssl-from-router && docker compose run --rm ssl-push-1panel
-#
-# Separate debug:
-#   docker compose run --rm ssl-from-router
-#   docker compose run --rm ssl-push-1panel
-#
 # Variables: .env
 
 services:
   ssl-from-router:
-    image: ssl-from-asus-router:latest
-    build:
-      context: .
-      dockerfile: Dockerfile.router
-      args:
-        BUILD_FROM: alpine:3.20
+    image: dylansea/1panel-ssl-from-asus-router:router-latest
     environment:
       ROUTER_USER: ${ROUTER_USER}
       ROUTER_IP: ${ROUTER_IP}
@@ -30,12 +25,7 @@ services:
     restart: "no"
 
   ssl-push-1panel:
-    image: ssl-push-1panel:latest
-    build:
-      context: .
-      dockerfile: Dockerfile.1panel
-      args:
-        BUILD_FROM: alpine:3.20
+    image: dylansea/1panel-ssl-from-asus-router:1panel-latest
     environment:
       ONEPANEL_BASE_URL: ${ONEPANEL_BASE_URL}
       ONEPANEL_API_KEY: ${ONEPANEL_API_KEY}
