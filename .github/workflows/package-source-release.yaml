@@ -1,0 +1,47 @@
+# After each version tag (same as Docker Hub publish) or when a GitHub Release is
+# published, attach source-${version}.tar.gz and .zip (git archive, no .git).
+#
+# Secrets: none (uses GITHUB_TOKEN)
+
+name: Package source for release
+
+on:
+  push:
+    tags:
+      - "v*"
+  release:
+    types: [published]
+
+jobs:
+  package:
+    name: Archive and upload
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: package-source-${{ github.event.release.tag_name || github.ref_name }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+
+      - name: Build archives and attach to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          VER="${TAG#v}"
+          git archive --format=tar.gz -o "source-${VER}.tar.gz" HEAD
+          git archive --format=zip -o "source-${VER}.zip" HEAD
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "source-${VER}.tar.gz" "source-${VER}.zip" --clobber
+          else
+            gh release create "$TAG" "source-${VER}.tar.gz" "source-${VER}.zip" \
+              --title "$TAG" --generate-notes
+          fi
