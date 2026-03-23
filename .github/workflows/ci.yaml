@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "docker-compose.yaml"
+      - "Dockerfile.*"
+      - "run.sh"
+      - "push-1panel.sh"
+      - "sync.sh"
+  push:
+    branches:
+      - main
+    paths:
+      - "docker-compose.yaml"
+      - "Dockerfile.*"
+      - "run.sh"
+      - "push-1panel.sh"
+      - "sync.sh"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Docker Compose build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build images
+        run: docker compose build

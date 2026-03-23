@@ -1,0 +1,50 @@
+# 1panel-ssl-from-asus-router — two images: router pull (SSH) vs 1Panel upload (HTTPS API).
+#
+# Together (host script chains two containers):
+#   ./sync.sh
+#   # or: docker compose run --rm ssl-from-router && docker compose run --rm ssl-push-1panel
+#
+# Separate debug:
+#   docker compose run --rm ssl-from-router
+#   docker compose run --rm ssl-push-1panel
+#
+# Variables: .env
+
+services:
+  ssl-from-router:
+    image: ssl-from-asus-router:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.router
+      args:
+        BUILD_FROM: alpine:3.20
+    environment:
+      ROUTER_USER: ${ROUTER_USER}
+      ROUTER_IP: ${ROUTER_IP}
+      ROUTER_SSH_PORT: ${ROUTER_SSH_PORT:-22}
+      ROUTER_PASSWORD: ${ROUTER_PASSWORD}
+      KEY_PATH_ON_ROUTER: ${KEY_PATH_ON_ROUTER}
+      CERT_PATH_ON_ROUTER: ${CERT_PATH_ON_ROUTER}
+    volumes:
+      - ./ssl:/ssl
+    restart: "no"
+
+  ssl-push-1panel:
+    image: ssl-push-1panel:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.1panel
+      args:
+        BUILD_FROM: alpine:3.20
+    environment:
+      ONEPANEL_BASE_URL: ${ONEPANEL_BASE_URL}
+      ONEPANEL_API_KEY: ${ONEPANEL_API_KEY}
+      ONEPANEL_API_PATH: ${ONEPANEL_API_PATH:-/api/v2/websites/ssl/upload}
+      ONEPANEL_SSL_ID: ${ONEPANEL_SSL_ID:-0}
+      ONEPANEL_SSL_DESCRIPTION: ${ONEPANEL_SSL_DESCRIPTION:-}
+      ONEPANEL_KEY_FILE: ${ONEPANEL_KEY_FILE:-/ssl/key.pem}
+      ONEPANEL_CERT_FILE: ${ONEPANEL_CERT_FILE:-/ssl/cert.pem}
+      ONEPANEL_SKIP_TLS_VERIFY: ${ONEPANEL_SKIP_TLS_VERIFY:-0}
+    volumes:
+      - ./ssl:/ssl:ro
+    restart: "no"
